@@ -24,7 +24,8 @@ code{
 <h3>Objective</h3>
 <p>This is the analysis for course project in Practical Machine Learning course offered in Coursera 
 by John Hopkins University in the Data Science Specialization</p>
-<h3>Background</h3>
+<p>The GitHub repository can be found at <a href = "https://github.com/Dinh-Hung-Tu/Practical-Machine-Learning/"> GitHub</a></p>
+<h3>Background of Dataset</h3>
 <p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href = "http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset). </p>
 <h3>Data</h3>
 <p>The training data for this project are available here:
@@ -105,14 +106,13 @@ decisionTreeMod <- rpart(classe ~ ., data=trainingV3, method="class")<br>
 fancyRpartPlot(decisionTreeMod)
 </code>
 <p>This the figure of the Decision Tree.</p>
+<img src = "https://www.dropbox.com/s/urg50w0mzfydlb0/Decision%20Tree.jpeg?dl=1">
 <p>Prediction based on the decision tree model.</p>
 <code>
 decisionTreePred <- predict(decisionTreeMod, testing, type = "class")
 </code>
 <p>Evaluate the algorithm from confusion matrix.</p>
-<code>
-confusionMatrix(decisionTreePred, testing$classe)
-</code>
+<img src ="https://www.dropbox.com/s/jtdkazf5jq4et0x/confusion_matrix_decision_tree.JPG?dl=1"> 
 <h3>Random Forest</h3>
 <p>Train random forest model</p>
 <code>randForestMod <- randomForest(classe ~. , data=trainingV3)</code>
@@ -121,7 +121,7 @@ confusionMatrix(decisionTreePred, testing$classe)
 randForestPred1 <- predict(randForestMod, testing, type = "class")
 </code>
 <p>Evaluate the algorithm from confusion matrix.</p>
-<code>confusionMatrix(randForestPred1, testing$classe)</code>
+<img src ="https://www.dropbox.com/s/re4jaovvwj6ysch/confusion_matrix_rand_forest.JPG?dl=1"> 
 <p>Conclusion: Random forest algorithm takes longer time to build the model but the accuracy is higher. Therefore, this model is used to make the predictions on final test set</p>
 <code>randForestPred2 <- predict(randForestMod, final_test_set, type = "class")</code>
 
