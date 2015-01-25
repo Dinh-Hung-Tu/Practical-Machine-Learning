@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<title>Practical Machine Learning Course - Project Write up</title>
+<style>
+h2{
+color: red;
+font-size: 25px;
+}
+h3{
+color: blue;
+font-size: 23px;
+}
+p {
+    font-family: "Georgia";
+    font-size: 20px;	
+	text-align: justify;
+}
+code{
+    font-family: "Courier";
+    font-size: 20px;
+}
+</style>
+<body>
+<h2>Introduction</h2>
+<h3>Objective</h3>
+<p>This is the analysis for course project in Practical Machine Learning course offered in Coursera 
+by John Hopkins University in the Data Science Specialization</p>
+<h3>Background</h3>
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href = "http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset). </p>
+<h3>Data</h3>
+<p>The training data for this project are available here:
+<a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv</a><br>
+The test data are available here: <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a>
+<br>
+The data for this project come from this source: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment. </p>
+<h2>Data Exploration</h2>
+<p>Data can be downloaded for exploration in local computer using Microsoft Excel. However, in order to save space in computer, the R script can also 
+access the data URL and load into its working space.</p>
+<code>#train and test files URL: <br>
+trainDataUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv" <br>
+testDataUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv" <br><br>
+#Preprocess step 1: handle missing values by replacing "NA", "#DIV/0!", and blank "".  <br>
+#Useful reference: http://www.ats.ucla.edu/stat/r/faq/missing.htm <br>
+total_training <- read.csv(url(trainDataUrl), na.strings=c("NA","#DIV/0!","")) <br>
+final_test_set <- read.csv(url(testDataUrl), na.strings=c("NA","#DIV/0!","")) <br>
+<br>
+#View dimension, header rows, col names <br>
+dim(total_training)<br>
+head(total_training)<br>
+colnames(total_training)
+</code>
+<p>Partition training data into training set to build model and test set for model evaluation. Final test set is only used for prediction based on best model.</p>
+<code>inTrain <- createDataPartition(y=total_training$classe, p=0.6, list=FALSE) <br>
+training <- total_training[inTrain,] #This set is to build the model <br>
+testing <- total_training[-inTrain,] #This set is to verify the model <br>
+</code>
+<h2>Data Cleaning</h2>
+<p>Real life data come with irrelevant information and many missing entries. To build an accurate models, those data must be handled properly. </p>
+<p>First step is to remove zero covariate. More information about this is available in the lecture slides <a href = "https://d396qusza40orc.cloudfront.net/predmachlearn/015covariateCreation.pdf">covariateCreation.pdf</a><p>
+<code>
+myDataNZV <- nearZeroVar(training, saveMetrics=TRUE) <br>
+myDataNZV #view the set of NZV <br><br>
+#Find the set of nzv == true in myDataNZV <br> 
+logical_index <- myDataNZV[,"nzv"] #30 variables results in nzv <br>
+nzv_set <-rownames(myDataNZV)[logical_index] #To view the list of variables that have NZV <br><br>
+#Remove nzv columns in the training data <br>
+trainingV1 <- training[!logical_index] <br>
+dim(trainingV1) #Results in 1170x130 <br>
+</code>
+
+<p>Next step, columns filled with many NA rows are removed. A threshold is set at 60%. <p>
+<code>
+#Cleaning Variables with too many NAs (60% threshold)  <br>
+trainingV3 <- trainingV2 #creating another subset to iterate in loop<br>
+for(i in 1:length(trainingV2)) { #for every column in the training dataset<br>
+        if( sum( is.na( trainingV2[, i] ) ) /nrow(trainingV2) >= 0.6 ) { #if nº NAs > 60% of total observations<br>
+		for(j in 1:length(trainingV3)) {<br>
+			if( length( grep(names(trainingV2[i]), names(trainingV3)[j]) ) ==1)  { #if the columns are the same:<br>
+				trainingV3 <- trainingV3[ , -j] #Remove that column<br>
+			}	<br>
+		} <br>
+	}<br>
+}<br>
+</code>
+<p>Last step is to apply the same data cleaning method to final test set and evaluation test set</p>
+<code> 
+#Base on this final result of the cleaning process, clean other two sets: test set from partition and test set for verification <br>
+testing<-testing[colnames(trainingV3)] <br>
+final_test_set<-final_test_set[colnames(trainingV3[,-match("classe", colnames(trainingV3))])] #Remove "classe" <br>
+#Coerced into same type <br>
+for (i in 1:length(final_test_set) ) { <br>
+        for(j in 1:length(trainingV3)) { <br>
+		if( length( grep(names(trainingV3[i]), names(final_test_set)[j]) ) ==1)  { <br>
+			class(final_test_set[j]) <- class(trainingV3[i]) <br>
+		}       <br>
+	}       <br>
+} <br>
+final_test_set <- rbind(trainingV3[2, -58] , final_test_set)  <br>
+final_test_set <- final_test_set[-1,] <br>
+</code>
+<h2>Machine Learning Algorithm</h2>
+<p>Two approaches are adopted in this assignment: Decision Tree and Random Forest. 
+<h3>Decision Tree</h3>
+<code>
+decisionTreeMod <- rpart(classe ~ ., data=trainingV3, method="class")<br>
+fancyRpartPlot(decisionTreeMod)
+</code>
+<p>This the figure of the Decision Tree.</p>
+<p>Prediction based on the decision tree model.</p>
+<code>
+decisionTreePred <- predict(decisionTreeMod, testing, type = "class")
+</code>
+<p>Evaluate the algorithm from confusion matrix.</p>
+<code>
+confusionMatrix(decisionTreePred, testing$classe)
+</code>
+<h3>Random Forest</h3>
+<p>Train random forest model</p>
+<code>randForestMod <- randomForest(classe ~. , data=trainingV3)</code>
+<p>Prediction based on random forest model built.</p>
+<code>
+randForestPred1 <- predict(randForestMod, testing, type = "class")
+</code>
+<p>Evaluate the algorithm from confusion matrix.</p>
+<code>confusionMatrix(randForestPred1, testing$classe)</code>
+<p>Conclusion: Random forest algorithm takes longer time to build the model but the accuracy is higher. Therefore, this model is used to make the predictions on final test set</p>
+<code>randForestPred2 <- predict(randForestMod, final_test_set, type = "class")</code>
+
+<h2>Submission</h2>
+<p>From R command line, set the working directory to the directory where submission files are going to be created. </p>
+<code>setwd("D:/Practical Machine Learning/project/submission")</code>
+<p>Finally, reused the function provided in submission page to automate copying the predictions into files for submission.</p>
+<code>
+pml_write_files = function(x){ <br>
+  n = length(x) <br>
+  for(i in 1:n){ <br>
+    filename = paste0("problem_id_",i,".txt") <br>
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE) <br>
+  } <br>
+} <br>
+</code>
+
+</body>
